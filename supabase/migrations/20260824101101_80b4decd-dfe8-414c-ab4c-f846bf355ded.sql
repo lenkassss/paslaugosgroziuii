@@ -1,0 +1,10 @@
+REVOKE ALL ON FUNCTION public.notify_admins(public.notification_type, jsonb) FROM anon, authenticated, public;
+REVOKE ALL ON FUNCTION public.guard_classified_status() FROM anon, authenticated, public;
+REVOKE ALL ON FUNCTION public.on_classified_submitted() FROM anon, authenticated, public;
+REVOKE ALL ON FUNCTION public.on_supplier_request_submitted() FROM anon, authenticated, public;
+REVOKE ALL ON FUNCTION public.on_course_submitted() FROM anon, authenticated, public;
+REVOKE ALL ON FUNCTION public.is_business_user(uuid) FROM anon, public;
+REVOKE ALL ON FUNCTION public.is_provider_user(uuid) FROM anon, public;
+GRANT EXECUTE ON FUNCTION public.is_business_user(uuid) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.is_provider_user(uuid) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.notify_admins(public.notification_type, jsonb) TO service_role;

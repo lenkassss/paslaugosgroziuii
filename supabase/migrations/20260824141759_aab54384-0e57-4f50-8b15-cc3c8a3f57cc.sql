@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.on_advertiser_submitted() FROM PUBLIC, anon, authenticated;

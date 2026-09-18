@@ -1,0 +1,15 @@
+{
+  "name": "PaslaugosGrožiui",
+  "short_name": "PaslaugosGrožiui",
+  "description": "Grožio paslaugų rezervacijos, mokymai, akcijos ir B2B tinklas vienoje platformoje.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#000000",
+  "background_color": "#FDFBF7",
+  "lang": "lt",
+  "icons": [
+    { "src": "/favicon.ico", "sizes": "48x48", "type": "image/x-icon" }
+  ]
+}

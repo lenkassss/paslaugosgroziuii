@@ -1,0 +1,85 @@
+workflows:
+  capacitor-build:
+    name: Build PaslaugosGrožiui (App Preview & Device)
+    max_build_duration: 30
+    instance_type: mac_mini_m2
+    environment:
+      xcode: latest
+      cocoapods: default
+      java: 17
+    scripts:
+      - name: Install dependencies & CLI
+        script: |
+          npm ci || npm install --legacy-peer-deps
+          npm install -g @capacitor/cli
+          npm install @capacitor/core @capacitor/android @capacitor/ios
+
+      - name: Build Native Static App
+        script: |
+          npm run build:native || npm run sync:native || true
+          if [ -f "dist/index.html" ]; then
+            sed -i '' 's/href="\//href=".//g' dist/index.html || true
+            sed -i '' 's/src="\//src=".//g' dist/index.html || true
+          fi
+
+      - name: Setup & Sync Capacitor Platforms
+        script: |
+          if [ ! -d "android" ]; then npx cap add android; fi
+          if [ ! -d "ios" ]; then npx cap add ios; fi
+          npx cap sync
+
+      - name: Build iOS Simulator App (For Codemagic App Preview)
+        script: |
+          cd ios/App
+          pod install || true
+          cd ../..
+          BUILD_TARGET="-project ios/App/App.xcodeproj"
+          if [ -d "ios/App/App.xcworkspace" ]; then
+            BUILD_TARGET="-workspace ios/App/App.xcworkspace"
+          fi
+          xcodebuild $BUILD_TARGET \
+                     -scheme App \
+                     -sdk iphonesimulator \
+                     -configuration Release \
+                     CODE_SIGNING_ALLOWED=NO \
+                     CODE_SIGNING_REQUIRED=NO \
+                     build \
+                     -derivedDataPath build/derivedData
+
+      - name: Build iOS Unsigned .ipa (For physical iPhone)
+        script: |
+          mkdir -p output_artifacts
+          BUILD_TARGET="-project ios/App/App.xcodeproj"
+          if [ -d "ios/App/App.xcworkspace" ]; then
+            BUILD_TARGET="-workspace ios/App/App.xcworkspace"
+          fi
+          xcodebuild $BUILD_TARGET \
+                     -scheme App \
+                     -sdk iphoneos \
+                     -configuration Release \
+                     CODE_SIGNING_ALLOWED=NO \
+                     CODE_SIGNING_REQUIRED=NO \
+                     CODE_SIGN_IDENTITY="" \
+                     archive \
+                     -archivePath build/App.xcarchive || true
+          if [ -d "build/App.xcarchive/Products/Applications" ]; then
+            mkdir -p build/Payload
+            cp -R build/App.xcarchive/Products/Applications/*.app build/Payload/
+            cd build && zip -r App-unsigned.ipa Payload && cd ..
+            cp build/App-unsigned.ipa output_artifacts/ 2>/dev/null || true
+          fi
+
+      - name: Build Android (.apk)
+        script: |
+          cd android
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
+          chmod +x gradlew
+          ./gradlew assembleDebug || true
+          cd ..
+          mkdir -p output_artifacts
+          find android/app/build/outputs -name "*.apk" -exec cp {} output_artifacts/ \; 2>/dev/null || true
+
+    artifacts:
+      - build/derivedData/**/Build/Products/*-iphonesimulator/*.app
+      - output_artifacts/*.ipa
+      - output_artifacts/*.apk

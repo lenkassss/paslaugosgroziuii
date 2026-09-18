@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.set_profile_trial_defaults() FROM PUBLIC, anon, authenticated;
